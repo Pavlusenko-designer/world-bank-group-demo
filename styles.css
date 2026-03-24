@@ -900,6 +900,26 @@ h2 {
   margin: 0;
 }
 
+.insight-link {
+  margin-top: var(--vr-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  text-decoration: none;
+  color: #1f4234;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.insight-link span {
+  transition: transform 180ms ease;
+}
+
+.insight-link:hover span,
+.insight-link:focus-visible span {
+  transform: translateX(3px);
+}
+
 .domain-drilldown {
   margin-top: 0.85rem;
   padding: 0.85rem;
