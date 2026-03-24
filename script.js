@@ -103,6 +103,35 @@ document.querySelectorAll(".sector-card").forEach((card) => {
 
 const progressBar = document.getElementById("scrollProgressBar");
 const parallaxTargets = document.querySelectorAll("[data-parallax]");
+const crossThemesSection = document.querySelector(".cross-themes");
+const mountainArea = document.querySelector(".theme-mountain-area");
+const mountainLines = Array.from(document.querySelectorAll(".theme-mountain-line"));
+const mountainLineLengths = mountainLines.map((line) => {
+  const len = line.getTotalLength();
+  line.style.strokeDasharray = `${len}`;
+  line.style.strokeDashoffset = `${len}`;
+  return len;
+});
+
+const updateCrossThemeMountain = () => {
+  if (!crossThemesSection || mountainLines.length === 0 || prefersReducedMotion) return;
+  const rect = crossThemesSection.getBoundingClientRect();
+  const vh = window.innerHeight;
+  const raw = (vh * 0.88 - rect.top) / (rect.height + vh * 0.25);
+  const progress = Math.max(0, Math.min(raw, 1));
+
+  mountainLines.forEach((line, i) => {
+    const factor = Math.max(0, Math.min(progress * (1 + i * 0.18), 1));
+    line.style.strokeDashoffset = `${mountainLineLengths[i] * (1 - factor)}`;
+    line.style.opacity = (0.15 + factor * 0.75).toFixed(2);
+  });
+
+  if (mountainArea) {
+    const yScale = 0.34 + progress * 0.66;
+    mountainArea.style.transform = `scaleY(${yScale.toFixed(3)})`;
+    mountainArea.style.opacity = (0.12 + progress * 0.28).toFixed(2);
+  }
+};
 
 const handleScrollEffects = () => {
   const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
@@ -122,6 +151,8 @@ const handleScrollEffects = () => {
       heroMedia.style.transform = `translate3d(0, ${mediaOffset}px, 0)`;
     }
   }
+
+  updateCrossThemeMountain();
 };
 
 window.addEventListener("scroll", handleScrollEffects, { passive: true });

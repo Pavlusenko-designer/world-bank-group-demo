@@ -751,6 +751,39 @@ h2 {
 
 .cross-themes .container {
   width: var(--container);
+  position: relative;
+  z-index: 2;
+}
+
+.cross-themes {
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-mountain-bg {
+  position: absolute;
+  inset: auto 0 300px;
+  height: clamp(140px, 24vh, 220px);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.45;
+}
+
+.theme-mountain-bg svg {
+  width: 100%;
+  height: 100%;
+}
+
+.theme-mountain-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.18;
+}
+
+.theme-mountain-line.line-a {
+  stroke: url(#mountainStrokeA);
+  stroke-width: 2.4;
 }
 
 .national-story.editorial-full {
