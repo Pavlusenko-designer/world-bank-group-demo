@@ -1,0 +1,350 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Novera National Development Outlook</title>
+    <meta
+      name="description"
+      content="A premium strategic insight microsite concept for Novera's national development narrative."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    <div class="ambient-grid" aria-hidden="true"></div>
+    <div class="ambient-grain" aria-hidden="true"></div>
+    <div class="scroll-progress" aria-hidden="true"><span id="scrollProgressBar"></span></div>
+
+    <header class="site-header" aria-label="Top navigation">
+      <div class="header-inner">
+        <a class="brand" href="#hero" aria-label="Novera Home">
+          <span class="brand-dot"></span>
+          <span>
+            <strong>Novera</strong>
+            <small>National Insight Briefing</small>
+          </span>
+        </a>
+
+        <nav class="main-nav" aria-label="Primary">
+          <a href="#national-story">National Story</a>
+          <a href="#sectors">Sectors</a>
+          <a href="#featured-insights">Insights</a>
+        </nav>
+
+        <a class="nav-cta" href="#transition-target">Explore Sector</a>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <section class="hero section-reveal editorial-full" id="hero" aria-labelledby="hero-title" data-step="00">
+        <div class="hero-media-wrap" aria-hidden="true">
+          <video
+            class="hero-video"
+            autoplay
+            muted
+            loop
+            playsinline
+            preload="metadata"
+            poster="https://images.unsplash.com/photo-1526498460520-4c246339dccb?auto=format&fit=crop&w=1600&q=80"
+          >
+            <source src="https://videos.pexels.com/video-files/3130182/3130182-hd_1920_1080_30fps.mp4" type="video/mp4" />
+          </video>
+          <div class="hero-overlay"></div>
+          <div class="hero-ring ring-a"></div>
+          <div class="hero-ring ring-b"></div>
+          <div class="hero-ring ring-c"></div>
+        </div>
+
+        <div class="hero-inner container">
+          <div class="hero-copy-wrap" data-parallax="fast">
+            <p class="eyebrow">National Development Outlook 2026</p>
+            <h1 id="hero-title">Turning national strategy into <span class="grad-word">measurable insight</span> across sectors</h1>
+            <p class="hero-copy">
+              A curated view of development priorities, progress, and structural challenges across Novera's national agenda.
+            </p>
+
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="#featured-insights">Explore Insights</a>
+              <a class="btn btn-secondary" href="#sectors">View Sectors</a>
+            </div>
+
+            <div class="scroll-hint">Scroll to discover</div>
+          </div>
+
+          <div class="hero-map-wrap" data-parallax="slow" aria-label="GCC systems map">
+            <div class="gcc-dot-map" id="gccDotMap" aria-hidden="true"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="national-story section-reveal editorial-full" id="national-story" aria-labelledby="story-title" data-step="01">
+        <div class="container story-stack">
+          <div class="story-intro">
+            <p class="eyebrow">National Story</p>
+            <h2 id="story-title">Investment is accelerating, but <span class="grad-word">outcomes remain uneven</span></h2>
+            <p>
+              Novera's infrastructure expansion is substantial, yet productivity and integration gains are not scaling at the same pace.
+            </p>
+          </div>
+
+          <div class="story-content">
+            <div class="metric-grid" role="list" aria-label="Key national indicators">
+              <article class="metric-card" role="listitem">
+                <p class="metric-label">Infrastructure investment</p>
+                <p class="metric-value" data-count="28">0%</p>
+                <p class="metric-note">Increase in the last three years</p>
+              </article>
+              <article class="metric-card" role="listitem">
+                <p class="metric-label">Logistics efficiency</p>
+                <p class="metric-value" data-count="12">0%</p>
+                <p class="metric-note">Measured productivity improvement</p>
+              </article>
+              <article class="metric-card" role="listitem">
+                <p class="metric-label">SME digital integration</p>
+                <p class="metric-value" data-count="35">0%</p>
+                <p class="metric-note">Participation in digital logistics systems</p>
+              </article>
+              <article class="metric-card" role="listitem">
+                <p class="metric-label">Rural connectivity gap</p>
+                <p class="metric-value" data-count="22">0pp</p>
+                <p class="metric-note">Below urban benchmark</p>
+              </article>
+            </div>
+
+          </div>
+        </div>
+        <div class="container story-chart-grid story-chart-grid-wide">
+          <article class="chart-panel">
+            <div class="panel-head">
+              <div>
+                <p class="panel-kicker">Investment vs Impact</p>
+                <h3>Growth-efficiency tension</h3>
+              </div>
+              <p class="panel-help">Click a bar for regional drilldown.</p>
+            </div>
+            <div class="chart-controls" role="group" aria-label="Investment lens">
+              <button type="button" class="chart-chip is-active" data-scenario="current">Current</button>
+              <button type="button" class="chart-chip" data-scenario="integration">Integration Push</button>
+              <button type="button" class="chart-chip" data-scenario="fragmented">Fragmented Systems</button>
+            </div>
+            <div class="chart-stage chart-stage-wide">
+              <canvas class="chart-canvas" id="investmentImpactChart" aria-label="Investment and efficiency by region" role="img"></canvas>
+            </div>
+          </article>
+
+          <article class="drilldown-panel" id="regionalDrilldown" aria-live="polite">
+            <div class="panel-head">
+              <div>
+                <p class="panel-kicker">Regional Drilldown</p>
+                <h3 id="drilldownTitle">Select a region in the chart</h3>
+              </div>
+              <button type="button" class="btn btn-tertiary" id="resetRegionalDrilldown">Reset</button>
+            </div>
+            <div class="chart-stage chart-stage-wide">
+              <canvas class="chart-canvas" id="regionalDetailChart" aria-label="Regional detail indicators" role="img"></canvas>
+            </div>
+            <p class="drilldown-note" id="drilldownNote">
+              Drilldown reveals the gap between asset expansion and operational utilization.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="sectors section-reveal editorial-full" id="sectors" aria-labelledby="sector-title" data-step="02">
+        <div class="container">
+          <div class="section-head">
+            <p class="eyebrow">Sector Overview</p>
+            <h2 id="sector-title">Navigate the national agenda through <span class="grad-word">strategic domains</span></h2>
+          </div>
+
+          <div class="sector-grid">
+            <article class="sector-card sector-card-xl is-active" tabindex="0" data-sector="infrastructure">
+              <video class="sector-video" muted loop playsinline preload="metadata" poster="https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=1600&q=80">
+                <source src="https://videos.pexels.com/video-files/3015510/3015510-hd_1920_1080_24fps.mp4" type="video/mp4" />
+              </video>
+              <div class="sector-overlay"></div>
+              <div class="sector-body">
+                <p class="sector-tag">Infrastructure & Digital Transformation</p>
+                <h3>Connectivity, logistics, and digital enablement</h3>
+                <p>Improving national connectivity, logistics performance, and digital enablement.</p>
+                <a class="sector-link" href="#">Open sector data <span aria-hidden="true">→</span></a>
+              </div>
+            </article>
+
+            <article class="sector-card sector-card-left-top" tabindex="0" data-sector="economy">
+              <video class="sector-video" muted loop playsinline preload="metadata" poster="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1600&q=80">
+                <source src="https://videos.pexels.com/video-files/854725/854725-hd_1920_1080_25fps.mp4" type="video/mp4" />
+              </video>
+              <div class="sector-overlay"></div>
+              <div class="sector-body">
+                <p class="sector-tag">Economic Growth</p>
+                <h3>Private competitiveness and market enablement</h3>
+                <p>Expanding private sector competitiveness and improving financial system enablement.</p>
+                <a class="sector-link" href="#">Explore growth analytics <span aria-hidden="true">→</span></a>
+              </div>
+            </article>
+
+            <article class="sector-card sector-card-left-bottom" tabindex="0" data-sector="people">
+              <video class="sector-video" muted loop playsinline preload="metadata" poster="https://images.unsplash.com/photo-1571260899304-425eee4c7efc?auto=format&fit=crop&w=1600&q=80">
+                <source src="https://videos.pexels.com/video-files/853988/853988-hd_1920_1080_25fps.mp4" type="video/mp4" />
+              </video>
+              <div class="sector-overlay"></div>
+              <div class="sector-body">
+                <p class="sector-tag">People & Human Development</p>
+                <h3>Labor, education, and health resilience</h3>
+                <p>Strengthening labor, education, and healthcare systems for long-term resilience.</p>
+                <a class="sector-link" href="#">View people outcomes <span aria-hidden="true">→</span></a>
+              </div>
+            </article>
+
+            <article class="sector-card sector-card-right-tall" tabindex="0" data-sector="environment">
+              <video class="sector-video" muted loop playsinline preload="metadata" poster="https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1600&q=80">
+                <source src="https://videos.pexels.com/video-files/1570846/1570846-hd_1920_1080_25fps.mp4" type="video/mp4" />
+              </video>
+              <div class="sector-overlay"></div>
+              <div class="sector-body">
+                <p class="sector-tag">Environment & Natural Resources</p>
+                <h3>Sustainability and resource stewardship</h3>
+                <p>Balancing sustainability, water, agriculture, and long-term natural capital stability.</p>
+                <a class="sector-link" href="#">Inspect environment signals <span aria-hidden="true">→</span></a>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="cross-themes section-reveal editorial-full" aria-labelledby="themes-title" data-step="03">
+        <div class="container">
+          <div class="section-head">
+            <p class="eyebrow">Cross-Sector Themes</p>
+            <h2 id="themes-title">System-wide lenses: <span class="grad-word">Governance</span> and <span class="grad-word">Women's Economic Development</span></h2>
+          </div>
+
+          <div class="themes-system">
+            <div class="themes-pillars">
+              <article class="theme-pillar">
+                <h3>Governance & Institutions</h3>
+                <p>Improves coordination quality, implementation discipline, and accountability across every policy domain.</p>
+                <a class="theme-arrow" href="#" aria-label="Explore Governance and Institutions">↗</a>
+              </article>
+              <article class="theme-pillar">
+                <h3>Women's Economic Development</h3>
+                <p>Expands inclusion, labor force participation, and enterprise opportunity across sectors and regions.</p>
+                <a class="theme-arrow" href="#" aria-label="Explore Women's Economic Development">↗</a>
+              </article>
+            </div>
+
+            <div class="themes-links" aria-label="Themes linked to sectors">
+              <article class="linked-sector">
+                <h4>Economic Growth</h4>
+                <p>Regulatory quality and inclusion drive private competitiveness.</p>
+                <a class="theme-arrow" href="#" aria-label="Open Economic Growth link">↗</a>
+              </article>
+              <article class="linked-sector">
+                <h4>People & Human Development</h4>
+                <p>Institutional delivery and participation shape outcomes in labor, education, and health.</p>
+                <a class="theme-arrow" href="#" aria-label="Open People and Human Development link">↗</a>
+              </article>
+              <article class="linked-sector">
+                <h4>Infrastructure & Digital Transformation</h4>
+                <p>Interoperability standards and inclusive access determine realized value.</p>
+                <a class="theme-arrow" href="#" aria-label="Open Infrastructure and Digital Transformation link">↗</a>
+              </article>
+              <article class="linked-sector">
+                <h4>Environment & Natural Resources</h4>
+                <p>Long-term stewardship depends on coherent governance and broad participation.</p>
+                <a class="theme-arrow" href="#" aria-label="Open Environment and Natural Resources link">↗</a>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="featured-insights section-reveal editorial-full" id="featured-insights" aria-labelledby="insights-title" data-step="04">
+        <div class="container">
+          <div class="section-head">
+            <p class="eyebrow">Featured Insights</p>
+            <h2 id="insights-title">Curated entry points into the <span class="grad-word">core narrative</span></h2>
+          </div>
+
+          <div class="insights-grid">
+            <article class="insight-card">
+              <img
+                class="insight-thumb"
+                src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80"
+                alt="Urban logistics infrastructure and city movement"
+                loading="lazy"
+              />
+              <h3>Infrastructure investment is not translating into economic efficiency</h3>
+              <p>Capital deployment is strong, but coordination and operational quality constrain productivity gains.</p>
+            </article>
+            <article class="insight-card">
+              <img
+                class="insight-thumb"
+                src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=1200&q=80"
+                alt="Regional transport route and inter-city connectivity"
+                loading="lazy"
+              />
+              <h3>Regional connectivity gaps are limiting private sector growth</h3>
+              <p>Secondary regions remain under-linked, creating uneven market access and higher logistics friction.</p>
+            </article>
+            <article class="insight-card">
+              <img
+                class="insight-thumb"
+                src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80"
+                alt="Digital network visualization representing system interoperability"
+                loading="lazy"
+              />
+              <h3>Digital systems remain fragmented across logistics and public services</h3>
+              <p>Platform fragmentation weakens interoperability and reduces the return on infrastructure investment.</p>
+            </article>
+          </div>
+
+          <article class="chart-panel insight-chart">
+            <div class="panel-head">
+              <div>
+                <p class="panel-kicker">Digital Integration Lens</p>
+                <h3>Digital integration adoption by domain over time</h3>
+              </div>
+              <p class="panel-help">Select a line point to inspect domain and year drilldown.</p>
+            </div>
+            <div class="chart-controls" role="group" aria-label="SME lens">
+              <button type="button" class="chart-chip is-active" data-domain-lens="readiness">Readiness</button>
+              <button type="button" class="chart-chip" data-domain-lens="adoption">Adoption</button>
+              <button type="button" class="chart-chip" data-domain-lens="interoperability">Interoperability</button>
+            </div>
+            <div class="chart-stage chart-stage-wide">
+              <canvas class="chart-canvas" id="smeIntegrationChart" aria-label="SME digital integration by domain" role="img"></canvas>
+            </div>
+            <div class="domain-drilldown" id="domainDrilldown" aria-live="polite">
+              <h4 id="domainDrilldownTitle">Choose a domain from the chart</h4>
+              <ul id="domainDrilldownList"></ul>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="transition-cta section-reveal editorial-full" aria-labelledby="transition-title" id="transition-target" data-step="05">
+        <div class="container transition-card">
+          <p class="eyebrow">Narrative Handoff</p>
+          <h2 id="transition-title">Explore <span class="grad-word">Infrastructure & Digital Transformation</span></h2>
+          <p>
+            Move from the national overview into the sector analysis to understand where connectivity, interoperability, and inclusion gaps are constraining outcomes.
+          </p>
+          <a class="btn btn-primary" href="#">Enter Sector Page</a>
+        </div>
+      </section>
+    </main>
+
+    <script src="./vendor/chart.umd.min.js"></script>
+    <script src="./script.js"></script>
+  </body>
+</html>
