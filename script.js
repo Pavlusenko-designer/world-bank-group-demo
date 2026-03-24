@@ -106,6 +106,7 @@ const parallaxTargets = document.querySelectorAll("[data-parallax]");
 const crossThemesSection = document.querySelector(".cross-themes");
 const mountainArea = document.querySelector(".theme-mountain-area");
 const mountainLines = Array.from(document.querySelectorAll(".theme-mountain-line"));
+const mountainArrow = document.querySelector(".theme-mountain-arrow");
 const mountainLineLengths = mountainLines.map((line) => {
   const len = line.getTotalLength();
   line.style.strokeDasharray = `${len}`;
@@ -125,6 +126,23 @@ const updateCrossThemeMountain = () => {
     line.style.strokeDashoffset = `${mountainLineLengths[i] * (1 - factor)}`;
     line.style.opacity = (0.15 + factor * 0.75).toFixed(2);
   });
+
+  if (mountainArrow && mountainLines[0] && mountainLineLengths[0] > 0) {
+    const firstFactor = Math.max(0, Math.min(progress, 1));
+    const firstLine = mountainLines[0];
+    const firstLength = mountainLineLengths[0];
+    const tipLength = Math.max(0.01, firstLength * firstFactor);
+    const prevLength = Math.max(0, tipLength - 8);
+    const tip = firstLine.getPointAtLength(tipLength);
+    const prev = firstLine.getPointAtLength(prevLength);
+    const angle = (Math.atan2(tip.y - prev.y, tip.x - prev.x) * 180) / Math.PI;
+
+    mountainArrow.setAttribute(
+      "transform",
+      `translate(${tip.x.toFixed(2)} ${tip.y.toFixed(2)}) rotate(${angle.toFixed(2)})`
+    );
+    mountainArrow.style.opacity = firstFactor > 0.02 ? (0.16 + firstFactor * 0.8).toFixed(2) : "0";
+  }
 
   if (mountainArea) {
     const yScale = 0.34 + progress * 0.66;

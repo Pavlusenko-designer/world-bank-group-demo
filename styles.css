@@ -334,7 +334,7 @@ section {
 }
 
 .eyebrow {
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.4rem;
   font-size: 0.74rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -553,11 +553,11 @@ h2 {
   justify-content: space-between;
   align-items: flex-start;
   gap: 0.7rem;
-  margin-bottom: 0.8rem;
+  margin-bottom: 1.15rem;
 }
 
 .panel-kicker {
-  margin: 0 0 0.2rem;
+  margin: 0 0 0.08rem;
   color: #537266;
   font-size: 0.74rem;
   text-transform: uppercase;
@@ -622,6 +622,7 @@ h2 {
 .section-head h2 {
   font-size: clamp(2.1rem, 4.6vw, 4.4rem);
   margin-top: 0;
+  margin-bottom: 0.75rem;
 }
 
 .section-head h2 { max-width: 16ch; }
@@ -632,7 +633,7 @@ h2 {
 
 .section-head {
   display: grid;
-  gap: var(--vr-2);
+  gap: 0;
   width: 100%;
   margin-inline: auto;
 }
@@ -766,7 +767,7 @@ h2 {
   height: clamp(140px, 24vh, 220px);
   pointer-events: none;
   z-index: 0;
-  opacity: 0.45;
+  opacity: 0.5;
 }
 
 .theme-mountain-bg svg {
@@ -778,12 +779,20 @@ h2 {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
-  opacity: 0.18;
+  opacity: 0.23;
 }
 
 .theme-mountain-line.line-a {
   stroke: url(#mountainStrokeA);
-  stroke-width: 2.4;
+  stroke-width: 3.6;
+}
+
+.theme-mountain-arrow {
+  fill: #c29a54;
+  fill-opacity: 0.84;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
 .national-story.editorial-full {
