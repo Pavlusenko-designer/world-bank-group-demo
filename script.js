@@ -19,6 +19,93 @@ document.querySelectorAll(".section-reveal").forEach((section) => {
   }
 });
 
+const supportsCustomCursor = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+if (supportsCustomCursor) {
+  document.documentElement.classList.add("has-custom-cursor");
+
+  const customCursor = document.createElement("div");
+  customCursor.className = "custom-cursor";
+  customCursor.setAttribute("aria-hidden", "true");
+  document.body.appendChild(customCursor);
+
+  const clickableSelector = [
+    "a[href]",
+    "button",
+    "[role='button']",
+    "[data-challenge-toggle]",
+    ".sector-card",
+    ".chart-chip",
+    ".flow-node",
+    "input",
+    "select",
+    "textarea",
+    "summary",
+  ].join(", ");
+
+  const hoverSurfaceSelector = [
+    ".metric-card",
+    ".insight-card",
+    ".importance-card",
+    ".challenge-card",
+    ".priority-card",
+    ".linked-sector",
+    ".theme-pillar",
+    ".transition-card",
+    ".chart-panel",
+    ".drilldown-panel",
+    ".chart-stage",
+    ".chart-canvas",
+    "canvas",
+  ].join(", ");
+
+  let cursorX = window.innerWidth * 0.5;
+  let cursorY = window.innerHeight * 0.5;
+  let targetX = cursorX;
+  let targetY = cursorY;
+  let rafId = null;
+  const followLerp = 0.42;
+  const followEpsilon = 0.06;
+
+  const renderCursor = () => {
+    cursorX += (targetX - cursorX) * followLerp;
+    cursorY += (targetY - cursorY) * followLerp;
+    customCursor.style.transform = `translate3d(${cursorX.toFixed(2)}px, ${cursorY.toFixed(2)}px, 0) translate(-50%, -50%)`;
+
+    if (Math.abs(targetX - cursorX) > followEpsilon || Math.abs(targetY - cursorY) > followEpsilon) {
+      rafId = requestAnimationFrame(renderCursor);
+    } else {
+      rafId = null;
+    }
+  };
+
+  const startCursorRender = () => {
+    if (rafId !== null) return;
+    rafId = requestAnimationFrame(renderCursor);
+  };
+
+  const setCursorVariantFromTarget = (target) => {
+    const interactiveAncestor = target && target.closest(clickableSelector);
+    const hoverSurfaceAncestor = target && target.closest(hoverSurfaceSelector);
+    customCursor.classList.toggle("is-hover", Boolean(interactiveAncestor || hoverSurfaceAncestor));
+  };
+
+  window.addEventListener("mousemove", (event) => {
+    if (!document.documentElement.classList.contains("cursor-ready")) {
+      document.documentElement.classList.add("cursor-ready");
+    }
+    targetX = event.clientX;
+    targetY = event.clientY;
+    customCursor.classList.add("is-visible");
+    setCursorVariantFromTarget(event.target);
+    startCursorRender();
+  });
+
+  window.addEventListener("mousedown", () => customCursor.classList.add("is-pressed"));
+  window.addEventListener("mouseup", () => customCursor.classList.remove("is-pressed"));
+  window.addEventListener("mouseleave", () => customCursor.classList.remove("is-visible"));
+  window.addEventListener("blur", () => customCursor.classList.remove("is-visible"));
+}
+
 const countUpElements = document.querySelectorAll(".metric-value[data-count]");
 const animateCountUp = (el) => {
   const finalValue = Number(el.dataset.count);
@@ -55,34 +142,97 @@ const metricsObserver = new IntersectionObserver(
   { threshold: 0.45 }
 );
 
-const metricsSection = document.querySelector(".metric-grid");
-if (metricsSection) metricsObserver.observe(metricsSection);
+document.querySelectorAll(".metric-grid").forEach((metricsSection) => {
+  metricsObserver.observe(metricsSection);
+});
+
+const sectorCards = Array.from(document.querySelectorAll(".sector-card"));
+const mobileSectorMedia = window.matchMedia("(max-width: 780px)");
+let mobileCenterSectorCard = null;
 
 const setActiveSectorCard = (targetCard) => {
-  document.querySelectorAll(".sector-card").forEach((card) => {
+  sectorCards.forEach((card) => {
     card.classList.toggle("is-active", card === targetCard);
   });
 };
 
-document.querySelectorAll(".sector-card").forEach((card) => {
+const playSectorVideoByCard = (card, restart = false) => {
+  if (!card) return;
+  const video = card.querySelector(".sector-video");
+  if (!video) return;
+  if (restart) video.currentTime = 0;
+  video.play().catch(() => {});
+};
+
+const pauseSectorVideoByCard = (card) => {
+  if (!card) return;
+  const video = card.querySelector(".sector-video");
+  if (!video) return;
+  video.pause();
+};
+
+const updateMobileCenterSectorPlayback = () => {
+  if (prefersReducedMotion || !mobileSectorMedia.matches || sectorCards.length === 0) return;
+
+  const viewportMid = window.innerHeight / 2;
+  let bestCard = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
+
+  sectorCards.forEach((card) => {
+    const rect = card.getBoundingClientRect();
+    if (rect.bottom <= 0 || rect.top >= window.innerHeight) return;
+    const center = rect.top + rect.height / 2;
+    const distance = Math.abs(center - viewportMid);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestCard = card;
+    }
+  });
+
+  if (!bestCard || bestCard === mobileCenterSectorCard) return;
+
+  mobileCenterSectorCard = bestCard;
+  setActiveSectorCard(bestCard);
+  sectorCards.forEach((card) => {
+    if (card === bestCard) {
+      playSectorVideoByCard(card, false);
+    } else {
+      pauseSectorVideoByCard(card);
+    }
+  });
+};
+
+sectorCards.forEach((card) => {
   const sectorVideo = card.querySelector(".sector-video");
-  card.addEventListener("click", () => setActiveSectorCard(card));
+  const sectorLink = card.querySelector(".sector-link");
+  const sectorHref = sectorLink ? sectorLink.getAttribute("href") : "";
+  const hasNavigableHref = Boolean(sectorHref && sectorHref !== "#" && !sectorHref.startsWith("javascript:"));
+
+  card.addEventListener("click", (event) => {
+    setActiveSectorCard(card);
+    if (event.target.closest("a")) return;
+    if (hasNavigableHref) window.location.href = sectorHref;
+  });
+
   card.addEventListener("keydown", (event) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      setActiveSectorCard(card);
+      if (hasNavigableHref) {
+        window.location.href = sectorHref;
+      } else {
+        setActiveSectorCard(card);
+      }
     }
   });
 
   if (!prefersReducedMotion) {
     const playSectorVideo = () => {
-      if (!sectorVideo) return;
-      sectorVideo.currentTime = 0;
-      sectorVideo.play().catch(() => {});
+      if (!sectorVideo || mobileSectorMedia.matches) return;
+      playSectorVideoByCard(card, true);
     };
     const pauseSectorVideo = () => {
-      if (!sectorVideo) return;
-      sectorVideo.pause();
+      if (!sectorVideo || mobileSectorMedia.matches) return;
+      pauseSectorVideoByCard(card);
     };
 
     card.addEventListener("mousemove", (event) => {
@@ -174,11 +324,26 @@ const handleScrollEffects = () => {
   }
 
   updateCrossThemeMountain();
+  updateMobileCenterSectorPlayback();
 };
 
 window.addEventListener("scroll", handleScrollEffects, { passive: true });
 window.addEventListener("resize", handleScrollEffects);
 handleScrollEffects();
+
+const handleSectorMediaChange = () => {
+  mobileCenterSectorCard = null;
+  if (!mobileSectorMedia.matches) {
+    sectorCards.forEach((card) => pauseSectorVideoByCard(card));
+  }
+  updateMobileCenterSectorPlayback();
+};
+
+if (typeof mobileSectorMedia.addEventListener === "function") {
+  mobileSectorMedia.addEventListener("change", handleSectorMediaChange);
+} else if (typeof mobileSectorMedia.addListener === "function") {
+  mobileSectorMedia.addListener(handleSectorMediaChange);
+}
 
 const gccDotMap = document.getElementById("gccDotMap");
 if (gccDotMap) {
@@ -215,11 +380,14 @@ if (gccDotMap) {
     b: "country-b",
   };
 
-  gccPattern.forEach((row) => {
-    row.split("").forEach((char) => {
+  gccPattern.forEach((row, rowIndex) => {
+    row.split("").forEach((char, colIndex) => {
       const dot = document.createElement("span");
-      if (colorClassMap[char]) {
+      const isKeptCountryDot = colorClassMap[char] && (rowIndex + colIndex) % 2 === 0;
+      if (isKeptCountryDot) {
         dot.className = `gcc-dot ${colorClassMap[char]}`;
+        dot.dataset.row = `${rowIndex}`;
+        dot.dataset.col = `${colIndex}`;
       } else {
         dot.className = "gcc-dot-empty";
       }
@@ -232,6 +400,8 @@ if (gccDotMap) {
   let lastPointerX = 0;
   let lastPointerY = 0;
   let frameRequest = null;
+  let ambientRequest = null;
+  let isDotMapHovering = false;
   const influenceRadius = 150;
 
   const cacheDotCenters = () => {
@@ -264,9 +434,47 @@ if (gccDotMap) {
   const resetDotInteraction = () => {
     dots.forEach((dot) => {
       dot.style.transform = "scale(1)";
-      dot.style.opacity = "0.9";
+      dot.style.opacity = "0.74";
       dot.style.filter = "saturate(1)";
     });
+  };
+
+  const renderAmbientPulse = (now) => {
+    if (isDotMapHovering) {
+      ambientRequest = null;
+      return;
+    }
+
+    const t = now * 0.001;
+    dots.forEach((dot, index) => {
+      const row = Number(dot.dataset.row || 0);
+      const col = Number(dot.dataset.col || 0);
+
+      // Distinct diagonal sweep + local pulse to keep the map visibly alive at idle.
+      const sweep = (Math.sin(t * 2.2 + col * 0.68 - row * 0.46) + 1) * 0.5;
+      const pulse = (Math.sin(t * 4.6 + row * 0.24 + col * 0.34) + 1) * 0.5;
+      const shimmer = (Math.sin(t * 8.5 + index * 0.91) + 1) * 0.5;
+      const intensity = Math.min(1, Math.max(0, sweep * 0.62 + pulse * 0.28 + shimmer * 0.1));
+
+      const scale = 0.72 + intensity * 0.88;
+      dot.style.transform = `scale(${scale.toFixed(3)})`;
+      dot.style.opacity = (0.26 + intensity * 0.74).toFixed(2);
+      dot.style.filter = `saturate(${(0.7 + intensity * 1.45).toFixed(2)})`;
+    });
+
+    ambientRequest = requestAnimationFrame(renderAmbientPulse);
+  };
+
+  const startAmbientPulse = () => {
+    if (prefersReducedMotion || isDotMapHovering || ambientRequest !== null) return;
+    ambientRequest = requestAnimationFrame(renderAmbientPulse);
+  };
+
+  const stopAmbientPulse = () => {
+    if (ambientRequest !== null) {
+      cancelAnimationFrame(ambientRequest);
+      ambientRequest = null;
+    }
   };
 
   cacheDotCenters();
@@ -274,13 +482,32 @@ if (gccDotMap) {
   window.addEventListener("resize", cacheDotCenters);
 
   if (!prefersReducedMotion) {
+    startAmbientPulse();
+    gccDotMap.addEventListener("mouseenter", () => {
+      isDotMapHovering = true;
+      stopAmbientPulse();
+    });
     gccDotMap.addEventListener("mousemove", (event) => {
+      if (!isDotMapHovering) {
+        isDotMapHovering = true;
+        stopAmbientPulse();
+      }
       updateDotInteraction(event.clientX, event.clientY);
     });
-    gccDotMap.addEventListener("mouseleave", resetDotInteraction);
+    gccDotMap.addEventListener("mouseleave", () => {
+      isDotMapHovering = false;
+      startAmbientPulse();
+    });
   }
 }
 
+const isHomeChartsPage =
+  typeof Chart !== "undefined" &&
+  !!document.getElementById("investmentImpactChart") &&
+  !!document.getElementById("regionalDetailChart") &&
+  !!document.getElementById("smeIntegrationChart");
+
+if (isHomeChartsPage) {
 const chartBaseOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -768,3 +995,414 @@ const handleInvestmentScrollGrowth = () => {
 window.addEventListener("scroll", handleInvestmentScrollGrowth, { passive: true });
 window.addEventListener("resize", handleInvestmentScrollGrowth);
 handleInvestmentScrollGrowth();
+}
+
+if (typeof Chart !== "undefined") {
+  const infraChallengeCards = Array.from(document.querySelectorAll(".challenge-card"));
+  if (infraChallengeCards.length) {
+    const setChallengeOpen = (card, isOpen) => {
+      const detail = card.querySelector(".challenge-detail");
+      const toggle = card.querySelector("[data-challenge-toggle]");
+      card.classList.toggle("is-open", isOpen);
+      if (detail) detail.hidden = !isOpen;
+      if (toggle) {
+        toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        toggle.setAttribute("aria-label", isOpen ? "Collapse challenge detail" : "Expand challenge detail");
+      }
+    };
+
+    infraChallengeCards.forEach((card, index) => {
+      setChallengeOpen(card, index === 0);
+      const toggle = card.querySelector("[data-challenge-toggle]");
+      if (!toggle) return;
+      toggle.addEventListener("click", () => {
+        const isOpen = card.classList.contains("is-open");
+        infraChallengeCards.forEach((target) => setChallengeOpen(target, false));
+        setChallengeOpen(card, !isOpen);
+      });
+    });
+  }
+
+  const flowNodes = Array.from(document.querySelectorAll(".flow-node"));
+  const flowCallouts = Array.from(document.querySelectorAll(".flow-callout"));
+  if (flowNodes.length && flowCallouts.length) {
+    const setFlowStep = (step) => {
+      flowNodes.forEach((node) => node.classList.toggle("is-active", node.dataset.step === step));
+      flowCallouts.forEach((callout) => callout.classList.toggle("is-active", callout.dataset.step === step));
+    };
+
+    flowNodes.forEach((node) => {
+      const activate = () => setFlowStep(node.dataset.step);
+      node.addEventListener("mouseenter", activate);
+      node.addEventListener("focusin", activate);
+      node.addEventListener("click", activate);
+    });
+
+    setFlowStep(flowNodes[0].dataset.step);
+  }
+
+  const infraFlowTrendCtx = document.getElementById("infraFlowTrendChart");
+  const infraFlowBottleneckCtx = document.getElementById("infraFlowBottleneckChart");
+  if (infraFlowTrendCtx && infraFlowBottleneckCtx) {
+    const infraFlowBaseOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: prefersReducedMotion ? false : { duration: 620, easing: "easeOutCubic" },
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: {
+            color: "#2e4c3d",
+            font: { family: "Plus Jakarta Sans", size: 12, weight: "700" },
+          },
+        },
+        tooltip: {
+          backgroundColor: "rgba(17, 32, 24, 0.95)",
+          titleFont: { family: "Manrope", weight: "700" },
+          bodyFont: { family: "Plus Jakarta Sans" },
+          padding: 12,
+          displayColors: false,
+          cornerRadius: 10,
+        },
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: "#3f5e50",
+            font: { family: "Plus Jakarta Sans", weight: "600" },
+            maxRotation: 0,
+          },
+          grid: { display: false },
+          border: { color: "rgba(79, 97, 87, 0.18)" },
+        },
+        y: {
+          ticks: {
+            color: "#3f5e50",
+            font: { family: "Plus Jakarta Sans", weight: "600" },
+          },
+          grid: { color: "rgba(79, 97, 87, 0.12)" },
+          border: { color: "rgba(79, 97, 87, 0.18)" },
+          beginAtZero: true,
+          max: 100,
+        },
+      },
+    };
+
+    const getFlowGradient = (chart, start, end) => {
+      const { ctx, chartArea } = chart;
+      if (!chartArea) return start;
+      const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+      gradient.addColorStop(0, start);
+      gradient.addColorStop(1, end);
+      return gradient;
+    };
+
+    new Chart(infraFlowTrendCtx, {
+      type: "line",
+      data: {
+        labels: ["2021", "2022", "2023", "2024", "2025", "2026"],
+        datasets: [
+          {
+            label: "Capacity Expansion",
+            data: [48, 57, 64, 72, 81, 88],
+            borderColor: "#0f8a6a",
+            pointBackgroundColor: "#0f8a6a",
+            pointBorderColor: "#ffffff",
+            pointBorderWidth: 2,
+            tension: 0.36,
+            borderWidth: 2.4,
+            fill: false,
+          },
+          {
+            label: "System Utilization",
+            data: [39, 44, 48, 52, 55, 58],
+            borderColor: "#c29a54",
+            pointBackgroundColor: "#c29a54",
+            pointBorderColor: "#ffffff",
+            pointBorderWidth: 2,
+            tension: 0.36,
+            borderWidth: 2.4,
+            fill: false,
+          },
+        ],
+      },
+      options: {
+        ...infraFlowBaseOptions,
+      },
+    });
+
+    new Chart(infraFlowBottleneckCtx, {
+      type: "bar",
+      data: {
+        labels: ["Data Interoperability", "SME Onboarding", "Customs Handoffs", "Regional Coverage"],
+        datasets: [
+          {
+            label: "Friction Score",
+            data: [76, 69, 64, 58],
+            backgroundColor: (context) =>
+              getFlowGradient(context.chart, "rgba(122, 152, 95, 0.45)", "rgba(122, 152, 95, 0.9)"),
+            borderColor: "rgba(97, 128, 72, 0.9)",
+            borderWidth: 1.2,
+            borderRadius: 10,
+            borderSkipped: false,
+          },
+        ],
+      },
+      options: {
+        ...infraFlowBaseOptions,
+        indexAxis: "y",
+        plugins: {
+          ...infraFlowBaseOptions.plugins,
+          legend: { display: false },
+        },
+        scales: {
+          x: {
+            ...infraFlowBaseOptions.scales.x,
+            max: 100,
+          },
+          y: {
+            ...infraFlowBaseOptions.scales.y,
+            grid: { display: false },
+          },
+        },
+      },
+    });
+  }
+
+  const infraBridgeCtx = document.getElementById("infraBridgeChart");
+  const infraGaugeCtx = document.getElementById("infraAdoptionGauge");
+  const infraRegionCtx = document.getElementById("infraRegionalGapChart");
+  const infraBridgeButtons = document.querySelectorAll("[data-bridge-lens]");
+  const infraBridgeNote = document.getElementById("infraBridgeNote");
+
+  if (infraBridgeCtx && infraGaugeCtx && infraRegionCtx) {
+    const infraBridgeScenarios = {
+      current: {
+        note: "Capacity is scaling faster than clearance and interoperability outcomes in all four regions.",
+        regions: ["Capital Belt", "Eastern Ports", "North Corridor", "Southern Growth Zone"],
+        investment: [88, 82, 72, 66],
+        efficiency: [74, 58, 51, 48],
+        adoption: 35,
+        gaps: [14, 24, 21, 18],
+      },
+      integration: {
+        note: "A unified logistics data layer closes the investment-efficiency gap and lifts SME participation.",
+        regions: ["Capital Belt", "Eastern Ports", "North Corridor", "Southern Growth Zone"],
+        investment: [90, 85, 75, 69],
+        efficiency: [82, 71, 64, 61],
+        adoption: 51,
+        gaps: [8, 14, 11, 8],
+      },
+      fragmented: {
+        note: "Without interoperability standards, utilization stays low and regional disparities widen.",
+        regions: ["Capital Belt", "Eastern Ports", "North Corridor", "Southern Growth Zone"],
+        investment: [88, 82, 72, 66],
+        efficiency: [67, 49, 44, 40],
+        adoption: 28,
+        gaps: [21, 33, 28, 26],
+      },
+    };
+    let currentInfraLens = "current";
+
+    const infraBaseOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: prefersReducedMotion ? false : { duration: 600, easing: "easeOutCubic" },
+      interaction: { mode: "nearest", intersect: false },
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: {
+            color: "#2e4c3d",
+            font: { family: "Plus Jakarta Sans", size: 12, weight: "700" },
+            boxWidth: 14,
+            boxHeight: 14,
+          },
+        },
+        tooltip: {
+          backgroundColor: "rgba(17, 32, 24, 0.95)",
+          titleFont: { family: "Manrope", weight: "700" },
+          bodyFont: { family: "Plus Jakarta Sans" },
+          padding: 12,
+          displayColors: false,
+          cornerRadius: 10,
+        },
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: "#3f5e50",
+            font: { family: "Plus Jakarta Sans", weight: "600" },
+            maxRotation: 0,
+          },
+          grid: { display: false },
+          border: { color: "rgba(79, 97, 87, 0.18)" },
+        },
+        y: {
+          ticks: {
+            color: "#3f5e50",
+            font: { family: "Plus Jakarta Sans", weight: "600" },
+          },
+          grid: { color: "rgba(79, 97, 87, 0.12)" },
+          border: { color: "rgba(79, 97, 87, 0.18)" },
+          beginAtZero: true,
+          max: 100,
+        },
+      },
+    };
+
+    const getVerticalGradient = (chart, start, end) => {
+      const { ctx, chartArea } = chart;
+      if (!chartArea) return start;
+      const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+      gradient.addColorStop(0, start);
+      gradient.addColorStop(1, end);
+      return gradient;
+    };
+
+    const infraBridgeChart = new Chart(infraBridgeCtx, {
+      type: "bar",
+      data: {
+        labels: infraBridgeScenarios[currentInfraLens].regions,
+        datasets: [
+          {
+            label: "Investment Index",
+            data: infraBridgeScenarios[currentInfraLens].investment,
+            backgroundColor: (context) =>
+              getVerticalGradient(context.chart, "rgba(15, 138, 106, 0.58)", "rgba(15, 138, 106, 0.95)"),
+            borderColor: "rgba(15, 138, 106, 0.95)",
+            borderWidth: 1.2,
+            borderRadius: 10,
+            borderSkipped: false,
+            maxBarThickness: 34,
+          },
+          {
+            label: "Efficiency Index",
+            data: infraBridgeScenarios[currentInfraLens].efficiency,
+            backgroundColor: (context) =>
+              getVerticalGradient(context.chart, "rgba(194, 154, 84, 0.5)", "rgba(194, 154, 84, 0.9)"),
+            borderColor: "rgba(194, 154, 84, 0.92)",
+            borderWidth: 1.2,
+            borderRadius: 10,
+            borderSkipped: false,
+            maxBarThickness: 34,
+          },
+        ],
+      },
+      options: infraBaseOptions,
+    });
+
+    const gaugeCenterTextPlugin = {
+      id: "gaugeCenterText",
+      afterDraw(chart, args, options) {
+        if (!options || !options.text) return;
+        const { ctx, chartArea } = chart;
+        const centerX = (chartArea.left + chartArea.right) / 2;
+        const centerY = (chartArea.top + chartArea.bottom) / 2;
+        ctx.save();
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = "#163126";
+        ctx.font = "700 1.42rem Manrope";
+        ctx.fillText(options.text, centerX, centerY - 6);
+        ctx.fillStyle = "#4d6b5e";
+        ctx.font = "600 0.78rem 'Plus Jakarta Sans'";
+        ctx.fillText("SME Integration", centerX, centerY + 14);
+        ctx.restore();
+      },
+    };
+
+    const infraAdoptionGauge = new Chart(infraGaugeCtx, {
+      type: "doughnut",
+      plugins: [gaugeCenterTextPlugin],
+      data: {
+        labels: ["Integrated", "Not integrated"],
+        datasets: [
+          {
+            data: [
+              infraBridgeScenarios[currentInfraLens].adoption,
+              100 - infraBridgeScenarios[currentInfraLens].adoption,
+            ],
+            backgroundColor: ["rgba(15, 138, 106, 0.9)", "rgba(184, 200, 190, 0.52)"],
+            borderWidth: 0,
+            cutout: "72%",
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: prefersReducedMotion ? false : { duration: 540, easing: "easeOutCubic" },
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: false },
+          gaugeCenterText: { text: `${infraBridgeScenarios[currentInfraLens].adoption}%` },
+        },
+      },
+    });
+
+    const infraRegionalGapChart = new Chart(infraRegionCtx, {
+      type: "bar",
+      data: {
+        labels: infraBridgeScenarios[currentInfraLens].regions,
+        datasets: [
+          {
+            label: "Investment-Efficiency Gap",
+            data: infraBridgeScenarios[currentInfraLens].gaps,
+            backgroundColor: (context) =>
+              getVerticalGradient(context.chart, "rgba(122, 152, 95, 0.45)", "rgba(122, 152, 95, 0.9)"),
+            borderColor: "rgba(97, 128, 72, 0.9)",
+            borderWidth: 1,
+            borderRadius: 10,
+            borderSkipped: false,
+          },
+        ],
+      },
+      options: {
+        ...infraBaseOptions,
+        indexAxis: "y",
+        scales: {
+          x: {
+            ...infraBaseOptions.scales.x,
+            max: 40,
+          },
+          y: {
+            ...infraBaseOptions.scales.y,
+            grid: { display: false },
+          },
+        },
+      },
+    });
+
+    const updateInfraBridgeCharts = (lens) => {
+      const scenario = infraBridgeScenarios[lens];
+      if (!scenario) return;
+
+      infraBridgeChart.data.labels = scenario.regions;
+      infraBridgeChart.data.datasets[0].data = scenario.investment;
+      infraBridgeChart.data.datasets[1].data = scenario.efficiency;
+      infraBridgeChart.update();
+
+      infraAdoptionGauge.data.datasets[0].data = [scenario.adoption, 100 - scenario.adoption];
+      infraAdoptionGauge.options.plugins.gaugeCenterText.text = `${scenario.adoption}%`;
+      infraAdoptionGauge.update();
+
+      infraRegionalGapChart.data.labels = scenario.regions;
+      infraRegionalGapChart.data.datasets[0].data = scenario.gaps;
+      infraRegionalGapChart.update();
+
+      if (infraBridgeNote) infraBridgeNote.textContent = scenario.note;
+    };
+
+    infraBridgeButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        infraBridgeButtons.forEach((chip) => chip.classList.remove("is-active"));
+        button.classList.add("is-active");
+        currentInfraLens = button.dataset.bridgeLens;
+        updateInfraBridgeCharts(currentInfraLens);
+      });
+    });
+
+    updateInfraBridgeCharts(currentInfraLens);
+  }
+}
