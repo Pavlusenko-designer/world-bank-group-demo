@@ -1157,12 +1157,22 @@ if (typeof Chart !== "undefined") {
         },
         scales: {
           x: {
-            ...infraFlowBaseOptions.scales.x,
+            ticks: {
+              color: "#3f5e50",
+              font: { family: "Plus Jakarta Sans", weight: "600" },
+            },
+            grid: { color: "rgba(79, 97, 87, 0.12)" },
+            border: { color: "rgba(79, 97, 87, 0.18)" },
+            beginAtZero: true,
             max: 100,
           },
           y: {
-            ...infraFlowBaseOptions.scales.y,
+            ticks: {
+              color: "#3f5e50",
+              font: { family: "Plus Jakarta Sans", weight: "600" },
+            },
             grid: { display: false },
+            border: { color: "rgba(79, 97, 87, 0.18)" },
           },
         },
       },
@@ -1363,12 +1373,22 @@ if (typeof Chart !== "undefined") {
         indexAxis: "y",
         scales: {
           x: {
-            ...infraBaseOptions.scales.x,
+            ticks: {
+              color: "#3f5e50",
+              font: { family: "Plus Jakarta Sans", weight: "600" },
+            },
+            grid: { color: "rgba(79, 97, 87, 0.12)" },
+            border: { color: "rgba(79, 97, 87, 0.18)" },
+            beginAtZero: true,
             max: 40,
           },
           y: {
-            ...infraBaseOptions.scales.y,
+            ticks: {
+              color: "#3f5e50",
+              font: { family: "Plus Jakarta Sans", weight: "600" },
+            },
             grid: { display: false },
+            border: { color: "rgba(79, 97, 87, 0.18)" },
           },
         },
       },
