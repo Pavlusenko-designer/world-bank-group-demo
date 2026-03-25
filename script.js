@@ -22,15 +22,18 @@ document.querySelectorAll(".section-reveal").forEach((section) => {
 const countUpElements = document.querySelectorAll(".metric-value[data-count]");
 const animateCountUp = (el) => {
   const finalValue = Number(el.dataset.count);
-  const hasPercentagePoint = el.textContent.includes("pp");
+  const initialText = el.textContent.trim().toLowerCase();
+  const suffix = initialText.includes("pp") ? "pp" : initialText.includes("%") ? "%" : initialText.includes("b") ? "b" : "";
+  const precision = Number.isInteger(finalValue) ? 0 : 1;
   const duration = 1000;
   const start = performance.now();
 
   const tick = (now) => {
     const progress = Math.min((now - start) / duration, 1);
     const eased = 1 - Math.pow(1 - progress, 3);
-    const current = Math.round(finalValue * eased);
-    el.textContent = hasPercentagePoint ? `${current}pp` : `${current}%`;
+    const current = finalValue * eased;
+    const formatted = precision > 0 ? current.toFixed(precision) : `${Math.round(current)}`;
+    el.textContent = `${formatted}${suffix}`;
 
     if (progress < 1) {
       requestAnimationFrame(tick);
@@ -386,12 +389,42 @@ const drilldownNote = document.getElementById("drilldownNote");
 const resetDrilldownBtn = document.getElementById("resetRegionalDrilldown");
 const scenarioButtons = document.querySelectorAll("[data-scenario]");
 const investmentPanel = document.querySelector(".story-chart-grid-wide .chart-panel");
-let investmentBarFocusIndex = null;
-let investmentScrollHoverIndex = -1;
+let investmentScrollProgress = prefersReducedMotion ? 1 : 0;
+let investmentScrollTargetProgress = investmentScrollProgress;
+let investmentScrollRafId = null;
+const investmentScrollScrubLerp = 0.07;
+const investmentScrollScrubEpsilon = 0.0015;
+let investmentHoverGroupIndex = null;
+const defaultRegionalProfile = [58, 40, 35, 43, 31];
+const regionalProfileMap = {
+  "Capital Belt": [82, 63, 61, 71, 58],
+  "North Corridor": [69, 39, 34, 46, 32],
+  "Eastern Ports": [76, 44, 41, 52, 38],
+  "Southern Growth Zone": [62, 35, 33, 41, 29],
+};
+let currentRegionalProfile = [...defaultRegionalProfile];
 
 const getCurrentRegionalData = () => regionalScenarios[currentScenario];
 const getRegionLabels = () => Object.keys(getCurrentRegionalData());
 const getRegionValues = () => Object.values(getCurrentRegionalData());
+const getBarOpacityFactor = (dataIndex) =>
+  investmentHoverGroupIndex === null || investmentHoverGroupIndex === dataIndex ? 1 : 0.5;
+const getInvestmentGradient = (chart, dataIndex) => {
+  const factor = getBarOpacityFactor(dataIndex);
+  return verticalGradient(
+    chart,
+    `rgba(15, 138, 106, ${(0.6 * factor).toFixed(3)})`,
+    `rgba(15, 138, 106, ${(0.96 * factor).toFixed(3)})`
+  );
+};
+const getEfficiencyGradient = (chart, dataIndex) => {
+  const factor = getBarOpacityFactor(dataIndex);
+  return verticalGradient(
+    chart,
+    `rgba(194, 154, 84, ${(0.58 * factor).toFixed(3)})`,
+    `rgba(194, 154, 84, ${(0.94 * factor).toFixed(3)})`
+  );
+};
 
 const investmentImpactChart = new Chart(investmentCtx, {
   type: "bar",
@@ -401,15 +434,9 @@ const investmentImpactChart = new Chart(investmentCtx, {
       {
         label: "Investment Index",
         data: getRegionValues().map((v) => v.investment),
-        backgroundColor: (context) => {
-          const i = context.dataIndex;
-          const isActive = investmentBarFocusIndex === null || investmentBarFocusIndex === i;
-          return isActive
-            ? verticalGradient(context.chart, "rgba(15, 138, 106, 0.6)", "rgba(15, 138, 106, 0.96)")
-            : verticalGradient(context.chart, "rgba(15, 138, 106, 0.22)", "rgba(15, 138, 106, 0.42)");
-        },
-        borderColor: (context) => (investmentBarFocusIndex === null || investmentBarFocusIndex === context.dataIndex ? "rgba(15, 138, 106, 0.98)" : "rgba(15, 138, 106, 0.35)"),
-        borderWidth: (context) => (investmentBarFocusIndex === null || investmentBarFocusIndex === context.dataIndex ? 1.2 : 1),
+        backgroundColor: (context) => getInvestmentGradient(context.chart, context.dataIndex),
+        borderColor: (context) => `rgba(15, 138, 106, ${(0.92 * getBarOpacityFactor(context.dataIndex)).toFixed(3)})`,
+        borderWidth: 1.2,
         borderRadius: 12,
         borderSkipped: false,
         maxBarThickness: 38,
@@ -417,15 +444,9 @@ const investmentImpactChart = new Chart(investmentCtx, {
       {
         label: "Efficiency Index",
         data: getRegionValues().map((v) => v.efficiency),
-        backgroundColor: (context) => {
-          const i = context.dataIndex;
-          const isActive = investmentBarFocusIndex === null || investmentBarFocusIndex === i;
-          return isActive
-            ? verticalGradient(context.chart, "rgba(194, 154, 84, 0.58)", "rgba(194, 154, 84, 0.94)")
-            : verticalGradient(context.chart, "rgba(194, 154, 84, 0.2)", "rgba(194, 154, 84, 0.42)");
-        },
-        borderColor: (context) => (investmentBarFocusIndex === null || investmentBarFocusIndex === context.dataIndex ? "rgba(194, 154, 84, 0.95)" : "rgba(194, 154, 84, 0.36)"),
-        borderWidth: (context) => (investmentBarFocusIndex === null || investmentBarFocusIndex === context.dataIndex ? 1.2 : 1),
+        backgroundColor: (context) => getEfficiencyGradient(context.chart, context.dataIndex),
+        borderColor: (context) => `rgba(194, 154, 84, ${(0.92 * getBarOpacityFactor(context.dataIndex)).toFixed(3)})`,
+        borderWidth: 1.2,
         borderRadius: 12,
         borderSkipped: false,
         maxBarThickness: 38,
@@ -442,6 +463,11 @@ const investmentImpactChart = new Chart(investmentCtx, {
     },
     onHover: (event, activeElements) => {
       event.native.target.style.cursor = activeElements.length ? "pointer" : "crosshair";
+      const nextHoverIndex = activeElements.length ? activeElements[0].index : null;
+      if (nextHoverIndex !== investmentHoverGroupIndex) {
+        investmentHoverGroupIndex = nextHoverIndex;
+        investmentImpactChart.update("none");
+      }
     },
   },
 });
@@ -453,7 +479,7 @@ const regionalDetailChart = new Chart(detailCtx, {
     datasets: [
       {
         label: "Regional Profile",
-        data: [58, 40, 35, 43, 31],
+        data: [...defaultRegionalProfile],
         fill: true,
         backgroundColor: "rgba(15, 138, 106, 0.24)",
         borderColor: "rgba(15, 138, 106, 0.95)",
@@ -493,59 +519,69 @@ const regionalDetailChart = new Chart(detailCtx, {
 });
 
 function updateRegionalDrilldown(region) {
-  const profileMap = {
-    "Capital Belt": [82, 63, 61, 71, 58],
-    "North Corridor": [69, 39, 34, 46, 32],
-    "Eastern Ports": [76, 44, 41, 52, 38],
-    "Southern Growth Zone": [62, 35, 33, 41, 29],
-  };
-
   const selected = getCurrentRegionalData()[region];
-  const profile = profileMap[region];
-  regionalDetailChart.data.datasets[0].data = profile;
-  regionalDetailChart.update();
+  currentRegionalProfile = regionalProfileMap[region] ? [...regionalProfileMap[region]] : [...defaultRegionalProfile];
+  applyRegionalChartProgress(investmentScrollProgress);
 
   drilldownTitle.textContent = `${region} performance profile`;
   drilldownNote.textContent = selected.note;
 }
 
-function setInvestmentScrollFocus(index, revealTooltip = true) {
-  investmentBarFocusIndex = index;
-  investmentImpactChart.update();
+function applyRegionalChartProgress(progress) {
+  const clamped = Math.max(0, Math.min(progress, 1));
+  regionalDetailChart.data.datasets[0].data = currentRegionalProfile.map((v) =>
+    Number((v * clamped).toFixed(1))
+  );
+  regionalDetailChart.update("none");
+}
 
-  if (index === null || index < 0) {
-    investmentImpactChart.setActiveElements([]);
-    investmentImpactChart.tooltip.setActiveElements([], { x: 0, y: 0 });
+function applyInvestmentChartProgress(progress) {
+  const clamped = Math.max(0, Math.min(progress, 1));
+  investmentScrollProgress = clamped;
+  const values = getRegionValues();
+  investmentImpactChart.data.datasets[0].data = values.map((v) => Number((v.investment * clamped).toFixed(1)));
+  investmentImpactChart.data.datasets[1].data = values.map((v) => Number((v.efficiency * clamped).toFixed(1)));
+  investmentImpactChart.update("none");
+  applyRegionalChartProgress(clamped);
+}
+
+function tickInvestmentScrollScrub() {
+  const delta = investmentScrollTargetProgress - investmentScrollProgress;
+  investmentScrollProgress += delta * investmentScrollScrubLerp;
+
+  if (Math.abs(delta) <= investmentScrollScrubEpsilon) {
+    investmentScrollProgress = investmentScrollTargetProgress;
+  }
+
+  applyInvestmentChartProgress(investmentScrollProgress);
+
+  if (Math.abs(investmentScrollTargetProgress - investmentScrollProgress) > investmentScrollScrubEpsilon) {
+    investmentScrollRafId = requestAnimationFrame(tickInvestmentScrollScrub);
+  } else {
+    investmentScrollRafId = null;
+  }
+}
+
+function setInvestmentScrollTarget(progress) {
+  investmentScrollTargetProgress = Math.max(0, Math.min(progress, 1));
+
+  if (prefersReducedMotion) {
+    applyInvestmentChartProgress(investmentScrollTargetProgress);
     return;
   }
 
-  const activeElements = [
-    { datasetIndex: 0, index },
-    { datasetIndex: 1, index },
-  ];
-  investmentImpactChart.setActiveElements(activeElements);
-
-  if (revealTooltip) {
-    const x = investmentImpactChart.scales.x.getPixelForValue(index);
-    const y = investmentImpactChart.scales.y.getPixelForValue(
-      Math.max(
-        investmentImpactChart.data.datasets[0].data[index],
-        investmentImpactChart.data.datasets[1].data[index]
-      )
-    );
-    investmentImpactChart.tooltip.setActiveElements(activeElements, { x, y });
+  if (investmentScrollRafId === null) {
+    investmentScrollRafId = requestAnimationFrame(tickInvestmentScrollScrub);
   }
-
-  const region = investmentImpactChart.data.labels[index];
-  if (region) updateRegionalDrilldown(region);
 }
 
 resetDrilldownBtn.addEventListener("click", () => {
   drilldownTitle.textContent = "Select a region in the chart";
   drilldownNote.textContent = "Drilldown reveals the gap between asset expansion and operational utilization.";
-  regionalDetailChart.data.datasets[0].data = [58, 40, 35, 43, 31];
-  regionalDetailChart.update();
-  setInvestmentScrollFocus(null, false);
+  currentRegionalProfile = [...defaultRegionalProfile];
+  applyRegionalChartProgress(investmentScrollProgress);
+  investmentImpactChart.setActiveElements([]);
+  investmentImpactChart.tooltip.setActiveElements([], { x: 0, y: 0 });
 });
 
 scenarioButtons.forEach((button) => {
@@ -555,10 +591,7 @@ scenarioButtons.forEach((button) => {
     currentScenario = button.dataset.scenario;
 
     investmentImpactChart.data.labels = getRegionLabels();
-    investmentImpactChart.data.datasets[0].data = getRegionValues().map((v) => v.investment);
-    investmentImpactChart.data.datasets[1].data = getRegionValues().map((v) => v.efficiency);
-    investmentImpactChart.update();
-    investmentScrollHoverIndex = -1;
+    applyInvestmentChartProgress(investmentScrollProgress);
     resetDrilldownBtn.click();
   });
 });
@@ -711,31 +744,27 @@ domainLensButtons.forEach((button) => {
 updateRegionalDrilldown(getRegionLabels()[0]);
 updateDomainDrilldown("Logistics", "2026");
 
-const handleInvestmentScrollHover = () => {
+const handleInvestmentScrollGrowth = () => {
   if (!investmentPanel || prefersReducedMotion) return;
 
   const rect = investmentPanel.getBoundingClientRect();
   const vh = window.innerHeight;
-  const fullyVisible = rect.top >= 0 && rect.bottom <= vh;
-  if (!fullyVisible) {
-    if (investmentScrollHoverIndex !== -1) {
-      investmentScrollHoverIndex = -1;
-      setInvestmentScrollFocus(null, false);
-    }
-    return;
+  const earlyStartOffset = 200;
+  const earlyCompleteOffset = 300;
+  const startTop = vh - rect.height + earlyStartOffset;
+  const endTop = earlyCompleteOffset;
+  const travel = startTop - endTop;
+  let progress = 0;
+
+  if (travel <= 1) {
+    progress = rect.top <= endTop ? 1 : 0;
+  } else {
+    progress = (startTop - rect.top) / travel;
   }
 
-  const progressRaw = (vh - rect.top) / Math.max(rect.height, 1);
-  const progress = Math.max(0, Math.min(progressRaw, 1));
-  const count = investmentImpactChart.data.labels.length;
-  const nextIndex = Math.min(count - 1, Math.floor(progress * count));
-
-  if (nextIndex !== investmentScrollHoverIndex) {
-    investmentScrollHoverIndex = nextIndex;
-    setInvestmentScrollFocus(nextIndex, true);
-  }
+  setInvestmentScrollTarget(progress);
 };
 
-window.addEventListener("scroll", handleInvestmentScrollHover, { passive: true });
-window.addEventListener("resize", handleInvestmentScrollHover);
-handleInvestmentScrollHover();
+window.addEventListener("scroll", handleInvestmentScrollGrowth, { passive: true });
+window.addEventListener("resize", handleInvestmentScrollGrowth);
+handleInvestmentScrollGrowth();
