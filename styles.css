@@ -40,47 +40,6 @@ body {
   overflow-x: hidden;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  html.has-custom-cursor.cursor-ready,
-  html.has-custom-cursor.cursor-ready body,
-  html.has-custom-cursor.cursor-ready * {
-    cursor: none !important;
-  }
-}
-
-.custom-cursor {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 48px;
-  height: 48px;
-  z-index: 1200;
-  pointer-events: none;
-  opacity: 0;
-  background: center / contain no-repeat url("./assets/default.svg");
-  mix-blend-mode: difference;
-  filter: invert(1);
-  transform: translate3d(-999px, -999px, 0) translate(-50%, -50%);
-  transition:
-    opacity 220ms ease,
-    background-image 180ms ease,
-    transform 95ms cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform, opacity, background-image;
-}
-
-.custom-cursor.is-visible {
-  opacity: 0.96;
-}
-
-.custom-cursor.is-hover {
-  background-image: url("./assets/hover.svg");
-}
-
-.custom-cursor.is-pressed {
-  opacity: 0.86;
-  filter: invert(1) brightness(0.92);
-}
-
 .ambient-grid {
   position: fixed;
   inset: 0;
